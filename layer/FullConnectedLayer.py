@@ -7,7 +7,8 @@ from activation import ActivatinFactory
 import Layer
 
 class FullConnectedLayer(Layer):
-    def __init__(self, pre_data, post_dimen, bias, activation_type):
+    def __init__(self, pre_data, post_data, post_dimen, bias, activation_type, learning_rate):
+        super(pre_data, post_data, learning_rate)
         self._pre_data = pre_data
         self._post_dimen = post_dimen
         self._bias = bias

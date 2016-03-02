@@ -95,14 +95,15 @@ class CNN(object):
         if pre_height < kernel_height :
             raise ValueError("Kernel height is too large for pre layer")
 
-        conv_layer = ConvolutionLayer.ConvolutionLayer(self._data[-1], kernel_num, kernel_width, kernel_height,
-                                      bias, activation_type='logistic')
-        self._layers.append(conv_layer)
-
         output_width = pre_width - kernel_width + 1
         output_height = pre_height - kernel_height + 1
         output_data = Data.Data(self._data[-1].get_channel(), output_width, output_height)
         self._data.append(output_data)
+
+        conv_layer = ConvolutionLayer.ConvolutionLayer(self._data[-2], output_data, kernel_num, kernel_width, kernel_height,
+                                      bias, activation_type, self._learning_rate)
+        self._layers.append(conv_layer)
+
 
     #增加全连接层
     def add_full_connected_layer(self, post_dimen, bias, activation_type='logistic'):
@@ -116,11 +117,12 @@ class CNN(object):
         assert post_dimen != 0
         assert activation_type != None
 
-        full_conn_layer = FullConnectedLayer.FullConnectedLayer(pre_data, post_dimen, bias, activation_type)
-        self._layers.append(full_conn_layer)
-
         output_data = Data.Data(post_dimen, 1, 1)
         self._data.append(output_data)
+
+        full_conn_layer = FullConnectedLayer.FullConnectedLayer(pre_data, output_data, post_dimen, bias,
+                                                                activation_type, self._learning_rate)
+        self._layers.append(full_conn_layer)
 
 
     #增加pooling层
@@ -137,10 +139,11 @@ class CNN(object):
         if pre_height % window_height != 0:
             raise ValueError("The pooling window's height must be divided evenly by pre layer")
 
-        pooling_layer = PoolingLayer.PoolingLayer(self._data[-1], window_width, window_height, type='average')
-        self._layers.append(pooling_layer)
-
         output_width = pre_width / window_width
         output_height = pre_height / window_height
         output_data = Data.Data(self._data[-1].get_channel(), output_width, output_height)
         self._data.append(output_data)
+
+        pooling_layer = PoolingLayer.PoolingLayer(self._data[-1], output_data, window_width, window_height, type, self._learning_rate)
+        self._layers.append(pooling_layer)
+
