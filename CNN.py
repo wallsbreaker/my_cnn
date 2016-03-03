@@ -97,7 +97,7 @@ class CNN(object):
 
         output_width = pre_width - kernel_width + 1
         output_height = pre_height - kernel_height + 1
-        output_data = Data.Data(self._data[-1].get_channel(), output_width, output_height)
+        output_data = Data.Data(kernel_num, output_width, output_height)
         self._data.append(output_data)
 
         conv_layer = ConvolutionLayer.ConvolutionLayer(self._data[-2], output_data, kernel_num, kernel_width, kernel_height,

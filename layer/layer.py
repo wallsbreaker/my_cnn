@@ -12,5 +12,5 @@ class Layer(object):
         pass
 
     #to be overwrited
-    def forward(self):
+    def backward(self):
         pass

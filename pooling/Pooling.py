@@ -3,7 +3,8 @@ __author__ = 'tao'
 
 class Pooling(object):
     def __init__(self, window_width, window_height):
-        pass
+        self._window_width = window_width
+        self._window_height = window_height
 
-    def XXX(self):
+    def pooling(self, array):
         pass
