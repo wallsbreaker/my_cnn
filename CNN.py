@@ -7,7 +7,9 @@ from layer import PoolingLayer
 from layer import ConvolutionLayer
 from layer import FullConnectedLayer
 
-from data import Data
+from data_structure import Data
+
+
 
 class CNN(object):
     def __init__(self, learning_rate, max_iter):
@@ -144,6 +146,6 @@ class CNN(object):
         output_data = Data.Data(self._data[-1].get_channel(), output_width, output_height)
         self._data.append(output_data)
 
-        pooling_layer = PoolingLayer.PoolingLayer(self._data[-1], output_data, window_width, window_height, type, self._learning_rate)
+        pooling_layer = PoolingLayer.PoolingLayer(self._data[-2], output_data, window_width, window_height, type, self._learning_rate)
         self._layers.append(pooling_layer)
 

@@ -21,10 +21,13 @@ class PoolingLayer(Layer.Layer):
         for channel in xrange(post_data_channel):
             for row in xrange(post_data_height):
                 for col in xrange(post_data_width):
-                    post_data_tensor[post_data_channel, post_data_height, post_data_width] =\
-                        self._pool.pooing(pre_data_tensor[channel, post_data_height*self._window_height:
-                        (post_data_height+1)*self._window_height, post_data_width*self._window_width:
-                        (post_data_width+1)*self._window_width])
+                    begin_height = row*self._window_height
+                    end_height = (row+1)*self._window_height
+                    begin_width = col * self._window_width
+                    end_width = (col+1) * self._window_width
+                    pooing_result = self._pool.pooing(pre_data_tensor[channel,
+                                                      begin_height:end_height, begin_width:end_width])
+                    post_data_tensor[channel, row, col] = pooing_result
 
     def backward(self):
         pass

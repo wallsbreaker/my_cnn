@@ -40,7 +40,7 @@ class ConvolutionLayer(Layer.Layer):
         activation_func = np.vectorize(ConvolutionLayer._activate_elementwise_func)
         result = activation_func(result, self._activation)
 
-        ConvolutionLayer._split_and_set_post_data(result)
+        self._split_and_set_post_data(result)
 
     def _expand(self):
         '''
@@ -48,30 +48,32 @@ class ConvolutionLayer(Layer.Layer):
         将kernel整合成 (hwc) * kernel_num 的矩阵
         :return:new_data, new_kernel
         '''
+        pre_data_tensor = self._pre_data.get_data()
         pre_data_channel = self._pre_data.get_channel()
         pre_data_width, pre_data_height = self._pre_data.get_width_height()
 
-        #For data
-        new_data = np.array([])
+        #For data_structure
+        new_data = []
         for row in xrange(pre_data_height-self._kernel_height+1):
             for col in xrange(pre_data_width-self._kernel_width+1):
                 data_row = []
                 for channel in xrange(pre_data_channel):
-                    for kernel_box_col in xrange(self._kernel_height):
-                        for kernel_box_row in xrange(self._kernel_width):
-                            data_row.append(self._pre_data[channel, row+kernel_box_row, col+kernel_box_col])
-                new_data = np.concatenate((new_data, data_row), axis=0)
+                    for kernel_box_row in xrange(self._kernel_height):
+                        for kernel_box_col in xrange(self._kernel_width):
+                            data_row.append(pre_data_tensor[channel, row+kernel_box_row, col+kernel_box_col])
+                new_data.append(np.array(data_row))
+        new_data = np.array(new_data)
 
         #For kernel
-        new_kernel = np.array([])
+        new_kernel = []
         for channel in xrange(pre_data_channel):
             for row in xrange(self._kernel_height):
                 for col in xrange(self._kernel_width):
                     kernel_row = []
                     for kernel_ix in xrange(self._kernel_num):
                         kernel_row.append(self._kernel[kernel_ix, channel, row, col])
-                    new_kernel = np.concatenate((new_kernel, kernel_row), axis=0)
-
+                    new_kernel.append(kernel_row)
+        new_kernel = np.array(new_kernel)
         return new_data, new_kernel
 
     def _split_and_set_post_data(self, result):

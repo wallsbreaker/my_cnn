@@ -13,11 +13,11 @@ class FullConnectedLayer(Layer.Layer):
         self._post_dimen = post_dimen
         self._bias = bias
         self._activation = ActivatinFactory.get_activation(activation_type)
-        self._w = self._init_w()
+        self._init_w()
 
     def _init_w(self):
         low, high = -0.5, 0.5
-        self._kernel = np.random.uniform(low, high, [self._pre_data.get_channel(), self._post_dimen])
+        self._w = np.random.uniform(low, high, [self._pre_data.get_channel(), self._post_dimen])
 
     def forward(self):
         pre_data_array = self._pre_data.get_output()
