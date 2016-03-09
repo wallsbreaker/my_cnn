@@ -43,7 +43,7 @@ class CNN(object):
             np.random.shuffle(seq)
 
             for ix in xrange(sample_size):
-                self._data[0].set_input(np.array(data[seq[ix]]))
+                self._data[0].set_data(np.array(data[seq[ix]]))
 
                 for layer in self._layers:
                     layer.forward()
@@ -71,7 +71,7 @@ class CNN(object):
         label = []
         sample_size = len(data)
         for ix in xrange(sample_size):
-            self._data[0].set_input(np.array(data[ix]))
+            self._data[0].set_data(np.array(data[ix]))
             for layer in self._layers:
                 layer.forward()
             assert self._data[-1].is_output()

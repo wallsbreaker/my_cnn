@@ -8,3 +8,6 @@ class Pooling(object):
 
     def pooling(self, array):
         pass
+
+    def get_unsample_matrix(self, width, height):
+        pass

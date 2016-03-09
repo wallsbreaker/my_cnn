@@ -23,7 +23,7 @@ class Data(object):
             return False
 
 
-    def set_input(self, data):
+    def set_data(self, data):
         assert (self._channel, self._height, self._width) == data.shape
         self._data = data
 
