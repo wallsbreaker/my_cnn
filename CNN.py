@@ -48,6 +48,8 @@ class CNN(object):
                 for layer in self._layers:
                     layer.forward()
 
+                #TODO:最后输出层的误差在这里计算
+
                 for layer in reversed(self._layers):
                     layer.backward()
 
@@ -73,7 +75,7 @@ class CNN(object):
             for layer in self._layers:
                 layer.forward()
             assert self._data[-1].is_output()
-            y = self._data[-1].get_output()
+            y = Data.Data.output_matrix2vector(self._data[-1].get_data())
             label.append(np.argmax(y))
         return label
 
@@ -88,7 +90,7 @@ class CNN(object):
         self._input_width, self._input_height = input_layer.get_width_height()
 
     #增加卷积层
-    def add_conv_layer(self, kernel_num, kernel_width, kernel_height, bias, activation_type='logistic'):
+    def add_conv_layer(self, kernel_num, kernel_width, kernel_height, activation_type='logistic'):
         if not self._data:
             raise ValueError("Sorry, you must add input layer first")
         pre_width, pre_height = self._data[-1].get_width_height()
@@ -103,12 +105,12 @@ class CNN(object):
         self._data.append(output_data)
 
         conv_layer = ConvolutionLayer.ConvolutionLayer(self._data[-2], output_data, kernel_num, kernel_width, kernel_height,
-                                      bias, activation_type, self._learning_rate)
+                                      activation_type, self._learning_rate)
         self._layers.append(conv_layer)
 
 
     #增加全连接层
-    def add_full_connected_layer(self, post_dimen, bias, activation_type='logistic'):
+    def add_full_connected_layer(self, post_dimen, activation_type='logistic'):
         if not self._data:
             raise ValueError("Sorry, you must add input layer first")
         pre_data = self._data[-1]
@@ -122,7 +124,7 @@ class CNN(object):
         output_data = Data.Data(post_dimen, 1, 1)
         self._data.append(output_data)
 
-        full_conn_layer = FullConnectedLayer.FullConnectedLayer(pre_data, output_data, post_dimen, bias,
+        full_conn_layer = FullConnectedLayer.FullConnectedLayer(pre_data, output_data, post_dimen,
                                                                 activation_type, self._learning_rate)
         self._layers.append(full_conn_layer)
 

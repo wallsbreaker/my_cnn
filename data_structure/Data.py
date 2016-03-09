@@ -22,9 +22,6 @@ class Data(object):
         else:
             return False
 
-    def get_output(self):
-        result = [x[0, 0] for x in self._data]
-        return np.array(result)
 
     def set_input(self, data):
         assert (self._channel, self._height, self._width) == data.shape
@@ -32,3 +29,21 @@ class Data(object):
 
     def get_data(self):
         return self._data
+
+    def set_error(self, error):
+        assert error.shape == (self._channel, self._width, self._height)
+        self._error = error
+
+    def get_error(self):
+        assert self._error
+        result = self._error
+        #拿到一次之后就置为None，防止多次梯度下降之间用浑
+        self._error = None
+        return result
+
+
+    @staticmethod
+    def output_matrix2vector(matrix):
+        assert matrix.shape[1] == 1 and matrix.shape[2] == 2
+        result = [x[0, 0] for x in matrix]
+        return np.array(result)

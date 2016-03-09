@@ -4,10 +4,10 @@ __author__ = 'tao'
 import numpy as np
 
 import Layer
-from activation import ActivatinFactory
+from activation import ActivationFactory
 
 class ConvolutionLayer(Layer.Layer):
-    def __init__(self, pre_data, post_data, kernel_num, kernel_width, kernel_height, bias, activation_type,
+    def __init__(self, pre_data, post_data, kernel_num, kernel_width, kernel_height, activation_type,
                  learning_rate):
         super(ConvolutionLayer, self).__init__(pre_data, post_data, learning_rate)
         self._kernel_num = kernel_num
@@ -16,8 +16,7 @@ class ConvolutionLayer(Layer.Layer):
 
         self._init_kernel()
 
-        self._bias = bias
-        self._activation = ActivatinFactory.get_activation(activation_type)
+        self._activation = ActivationFactory.get_activation(activation_type)
 
 
     def _init_kernel(self):
@@ -36,9 +35,7 @@ class ConvolutionLayer(Layer.Layer):
         '''
         new_data, new_kernel = self._expand()
         result = np.dot(new_data, new_kernel)
-        result += self._bias
-        activation_func = np.vectorize(ConvolutionLayer._activate_elementwise_func)
-        result = activation_func(result, self._activation)
+        result = self._activation.apply_activate_elementwise(result)
 
         self._split_and_set_post_data(result)
 
@@ -86,7 +83,3 @@ class ConvolutionLayer(Layer.Layer):
                 for col in xrange(post_data_width):
                     post_data_tensor[kernel_ix, row, col] = result[ix, kernel_ix]
                     ix += 1
-
-    @staticmethod
-    def _activate_elementwise_func(element, func):
-        return func(element)
