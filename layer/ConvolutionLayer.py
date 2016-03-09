@@ -2,6 +2,7 @@
 __author__ = 'tao'
 
 import numpy as np
+import scipy.signal
 
 import Layer
 from activation import ActivationFactory
@@ -17,6 +18,7 @@ class ConvolutionLayer(Layer.Layer):
         self._init_kernel()
 
         self._activation = ActivationFactory.get_activation(activation_type)
+        self._bias = 1
 
 
     def _init_kernel(self):
@@ -25,7 +27,33 @@ class ConvolutionLayer(Layer.Layer):
                                                      self._kernel_height, self._kernel_width])
 
     def backward(self):
-        pass
+        pre_data_tensor = self._pre_data.get_data()
+        pre_data_channel, pre_data_width, pre_data_height = pre_data_tensor.shape
+
+        post_data_delta = self._post_data.get_error()
+        pre_data_delta = np.zeros([pre_data_channel, pre_data_height, pre_data_width])
+
+        for channel in xrange(pre_data_channel):
+            for kernel in xrange(self._kernel_num):
+                #for pre data delta
+                pre_data_delta[channel] += scipy.signal.convolve2d(post_data_delta[kernel],
+                                                                   self._kernel[kernel, channel])
+                #update w
+                partial = scipy.signal.convolve2d(pre_data_tensor[channel], self._kernel[kernel, channel])
+                self._w[kernel, channel] += self._learning_rate * partial
+
+        pre_data_delta = self._activation.apply_derivate_elementwise(pre_data_delta)
+        self._pre_data.set_error(pre_data_delta)
+
+    def _expand_full_mode(self, data):
+        data_height, data_width = data.shape
+        new_data_width =data_width - self._kernel_width + 1
+        new_data_height = data_height - self._kernel_height + 1
+        new_data = np.zeros([new_data_height, new_data_width])
+        for row in xrange(data_height):
+            for col in xrange(data_width):
+                new_data[row+1, col+1] = data[row, col]
+        return new_data
 
     def forward(self):
         '''
@@ -35,6 +63,7 @@ class ConvolutionLayer(Layer.Layer):
         '''
         new_data, new_kernel = self._expand()
         result = np.dot(new_data, new_kernel)
+        result += self._bias
         result = self._activation.apply_activate_elementwise(result)
 
         self._split_and_set_post_data(result)

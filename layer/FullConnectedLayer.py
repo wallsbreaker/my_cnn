@@ -15,6 +15,8 @@ class FullConnectedLayer(Layer.Layer):
         self._activation = ActivationFactory.get_activation(activation_type)
         self._init_w()
 
+        #
+
     def _init_w(self):
         low, high = -0.5, 0.5
         self._w = np.random.uniform(low, high, [self._post_dimen, self._pre_data.get_channel()])

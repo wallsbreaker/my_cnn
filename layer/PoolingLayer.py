@@ -17,6 +17,8 @@ class PoolingLayer(Layer.Layer):
         self._pool = PoolingFactory.get_pool(window_width, window_height, pooling_type)
 
         self._activation = ActivationFactory.get_activation(activation_type)
+        #TODO
+        self._bias = 1
 
     def forward(self):
         '''
@@ -36,7 +38,7 @@ class PoolingLayer(Layer.Layer):
                     pooing_result = self._pool.pooing(pre_data_tensor[channel,
                                                       begin_height:end_height, begin_width:end_width])
                     post_data_tensor[channel, row, col] = pooing_result
-        post_data_tensor = self._activation.apply_activate_elementwise(post_data_tensor)
+        post_data_tensor = self._activation.apply_activate_elementwise(post_data_tensor+1)
         self._post_data.set_data(post_data_tensor)
 
     def backward(self):
