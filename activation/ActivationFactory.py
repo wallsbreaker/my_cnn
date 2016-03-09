@@ -2,7 +2,7 @@
 __author__ = 'tao'
 
 import Sigmod
-import math
+import Linear
 
 def get_activation(activation_type):
     result = None
@@ -10,6 +10,8 @@ def get_activation(activation_type):
         raise ValueError("Pooling type should not be None")
     elif activation_type.lower() == 'logistic' or activation_type.lower() == 'sigmod':
         result = Sigmod()
+    elif activation_type.lower() == 'linear':
+        result = Linear()
     else:
         raise ValueError("Pooling type must be either average or max")
 
