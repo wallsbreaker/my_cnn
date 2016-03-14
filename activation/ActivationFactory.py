@@ -9,9 +9,9 @@ def get_activation(activation_type):
     if not activation_type:
         raise ValueError("Pooling type should not be None")
     elif activation_type.lower() == 'logistic' or activation_type.lower() == 'sigmod':
-        result = Sigmod()
+        result = Sigmod.Sigmod()
     elif activation_type.lower() == 'linear':
-        result = Linear()
+        result = Linear.Linear()
     else:
         raise ValueError("Pooling type must be either average or max")
 

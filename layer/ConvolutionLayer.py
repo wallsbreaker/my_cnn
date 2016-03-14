@@ -2,7 +2,7 @@
 __author__ = 'tao'
 
 import numpy as np
-import scipy.signal
+from scipy import signal as sg
 
 import Layer
 from activation import ActivationFactory
@@ -16,9 +16,11 @@ class ConvolutionLayer(Layer.Layer):
         self._kernel_height = kernel_height
 
         self._init_kernel()
+        self._init_bias()
+        self._connected_table = np.ones([kernel_num, self._pre_data.get_channel()])
 
-        self._activation = ActivationFactory.get_activation(activation_type)
-        self._bias = 1
+        #暂时不支持非线性激活函数，反向传播时未能搞懂
+        #self._activation = ActivationFactory.get_activation(activation_type)
 
 
     def _init_kernel(self):
@@ -26,47 +28,57 @@ class ConvolutionLayer(Layer.Layer):
         self._kernel = np.random.uniform(low, high, [self._kernel_num, self._pre_data.get_channel(),
                                                      self._kernel_height, self._kernel_width])
 
-    def backward(self):
-        pre_data_tensor = self._pre_data.get_data()
-        pre_data_channel, pre_data_width, pre_data_height = pre_data_tensor.shape
-
-        post_data_delta = self._post_data.get_error()
-        pre_data_delta = np.zeros([pre_data_channel, pre_data_height, pre_data_width])
-
-        for channel in xrange(pre_data_channel):
-            for kernel in xrange(self._kernel_num):
-                #for pre data delta
-                pre_data_delta[channel] += scipy.signal.convolve2d(post_data_delta[kernel],
-                                                                   self._kernel[kernel, channel])
-                #update w
-                partial = scipy.signal.convolve2d(pre_data_tensor[channel], self._kernel[kernel, channel])
-                self._w[kernel, channel] += self._learning_rate * partial
-
-        pre_data_delta = self._activation.apply_derivate_elementwise(pre_data_delta)
-        self._pre_data.set_error(pre_data_delta)
-
-    def _expand_full_mode(self, data):
-        data_height, data_width = data.shape
-        new_data_width =data_width - self._kernel_width + 1
-        new_data_height = data_height - self._kernel_height + 1
-        new_data = np.zeros([new_data_height, new_data_width])
-        for row in xrange(data_height):
-            for col in xrange(data_width):
-                new_data[row+1, col+1] = data[row, col]
-        return new_data
+    def _init_bias(self):
+        low, high = -0.5, 0.5
+        self._bias = np.random.uniform(low, high, self._kernel_num)
 
     def forward(self):
         '''
         convolve_and_set_post_data
         将data与kernel均展开成大矩阵做卷积
         所有通道的图片整合成一个大矩阵，每个kernel也整合成对应的矩阵， 乘self._kernel_size遍就可以了
-        '''
+
         new_data, new_kernel = self._expand()
         result = np.dot(new_data, new_kernel)
         result += self._bias
         result = self._activation.apply_activate_elementwise(result)
 
         self._split_and_set_post_data(result)
+        '''
+        """
+        按部就班
+        """
+        pre_data_tensor = self._pre_data.get_data()
+        post_data_tensor = self._post_data.get_data()
+        post_data_tensor.fill(0)
+        for kernel in xrange(self._kernel_num):
+            for channel in xrange(self._pre_data.get_channel()):
+                if self._connected_table[kernel, channel]:
+                    post_data_tensor[kernel] += sg.convolve2d(pre_data_tensor[channel], self._kernel[kernel, channel].T, 'valid')
+            post_data_tensor[kernel] += self._bias[kernel]
+            #post_data_tensor[kernel] = self._activation.apply_activate_elementwise(post_data_tensor[kernel])
+
+    def backward(self):
+        #update kernel and bias
+        pre_data_tensor = self._pre_data.get_data()
+        pre_data_chanel = pre_data_tensor.shape[0]
+        post_sensitivity = self._post_data.get_sensitivity()
+        for kernel in xrange(self._kernel_num):
+            for channel in xrange(pre_data_chanel):
+                delta_kernel = sg.convolve2d(pre_data_tensor[channel], post_sensitivity[kernel], 'valid')
+                self._kernel[kernel][channel] -= self._learning_rate * delta_kernel
+            self._bias[kernel] -= self._learning_rate * post_sensitivity[kernel]
+
+        #update pre sensitivity
+        pre_sensitivity = self._pre_data.get_sensitivity()
+        pre_sensitivity.fill(0)
+        post_tensor = self._post_data.get_data()
+        for channel in xrange(pre_data_chanel):
+            for kernel in xrange(self._kernel_num):
+                if self._connected_table[kernel, channel]:
+                    pre_sensitivity[channel] += sg.convolve2d(post_sensitivity[kernel], self._kernel[kernel][channel],
+                            'full')# * self._activation.apply_derivate_elementwise_from_output(post_tensor[kernel])
+
 
     def _expand(self):
         '''
@@ -104,8 +116,7 @@ class ConvolutionLayer(Layer.Layer):
 
     def _split_and_set_post_data(self, result):
         post_data_tensor = self._post_data.get_data()
-        post_data_channel = self._post_data.get_channel()
-        post_data_width, post_data_height = self._post_data.get_width_height()
+        post_data_channel, post_data_width, post_data_height = post_data_tensor.shape
         for kernel_ix in xrange(post_data_channel):
             ix = 0
             for row in xrange(post_data_height):

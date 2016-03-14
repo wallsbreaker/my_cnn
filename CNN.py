@@ -30,13 +30,14 @@ class CNN(object):
 
         sample_size = len(data)
 
-        if __debug__:
-                predict_correct = 0.0
-                pred_label = self.predict(data)
-                for ix in xrange(sample_size):
-                    if pred_label[ix] == label[ix]:
-                        predict_correct += 1
-                print "Accuracy before iteration: {0}".format(predict_correct/sample_size)
+        #训练之前随机初始化的准确率
+        predict_correct = 0.0
+        pred_label = self.predict(data)
+        output_node_num = len(pred_label[0])
+        for ix in xrange(sample_size):
+            if np.argmax(pred_label[ix]) == np.argmax(np.array(label[ix])):
+                predict_correct += 1
+        print "Accuracy before iteration: {0}".format(predict_correct/sample_size)
 
         seq = np.r_[0:sample_size]
         for iter in xrange(self._max_iter):
@@ -48,7 +49,16 @@ class CNN(object):
                 for layer in self._layers:
                     layer.forward()
 
-                #TODO:最后输出层的误差在这里计算
+                print 'forward over'
+                #误差用交叉上的形式
+                output_data = Data.Data.output_matrix2vector(self._data[-1].get_data())
+                output_error = np.zeros([output_node_num, 1, 1])
+                for output_ix in xrange(output_node_num):
+                    if label[ix][output_ix]:
+                        output_error[output_ix, 0, 0] = np.log(output_data[output_ix])
+                    else:
+                        output_error[output_ix, 0, 0] = np.log(1 - output_data[output_ix])
+                self._data[-1].set_sensitivity(output_error)
 
                 for layer in reversed(self._layers):
                     layer.backward()
@@ -60,6 +70,9 @@ class CNN(object):
                     if pred_label[ix] == label[ix]:
                         predict_correct += 1
                 print "Iteration {0} accuracy: {1}".format(iter, predict_correct/sample_size)
+
+    def _compute_error(self):
+        pass
 
     def predict(self, data):
         assert self._layers
@@ -76,14 +89,14 @@ class CNN(object):
                 layer.forward()
             assert self._data[-1].is_output()
             y = Data.Data.output_matrix2vector(self._data[-1].get_data())
-            label.append(np.argmax(y))
+            label.append(y)
         return label
 
     #增加输入数据层
     def add_input_layer(self, channel, width, height):
         if self._data:
             raise ValueError("Sorry, input layer cannot be added again")
-        input_layer = Data.Data(channel, width, height)
+        input_layer = Data.Data(channel, width, height, True)
         self._data.append(input_layer)
 
         self._input_channel = input_layer.get_channel()
@@ -130,7 +143,7 @@ class CNN(object):
 
 
     #增加pooling层
-    def add_pooling_layer(self, window_width, window_height, type='average'):
+    def add_pooling_layer(self, window_width, window_height, pooling_type='average', activation_type='logistic'):
         if not self._data:
             raise ValueError("Sorry, you must add input layer first")
         pre_width, pre_height = self._data[-1].get_width_height()
@@ -148,6 +161,6 @@ class CNN(object):
         output_data = Data.Data(self._data[-1].get_channel(), output_width, output_height)
         self._data.append(output_data)
 
-        pooling_layer = PoolingLayer.PoolingLayer(self._data[-2], output_data, window_width, window_height, type, self._learning_rate)
+        pooling_layer = PoolingLayer.PoolingLayer(self._data[-2], output_data, window_width, window_height, pooling_type, activation_type, self._learning_rate)
         self._layers.append(pooling_layer)
 

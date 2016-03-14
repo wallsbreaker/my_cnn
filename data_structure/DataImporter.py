@@ -177,7 +177,7 @@ class DataImporter:
 			images[ix] = np.array(images[ix])
 		labels = []
 		for item in tmp_labels:
-			labels.append(np.argmax(item))
+			labels.append(item)
 		return images, labels
 	
 	def filterClasses(self, images, labels, classesToKeep):

@@ -14,7 +14,7 @@ class Activation(object):
         result = func(data)
         return result
 
-    def apply_derivate_elementwise(self, data):
+    def apply_derivate_elementwise_from_output(self, data):
         func = np.vectorize(self.derivative)
         result = func(data)
         return result
