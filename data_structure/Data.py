@@ -39,7 +39,6 @@ class Data(object):
         self._sensitivity = sensitivity
 
     def get_sensitivity(self):
-        assert self._sensitivity != None
         result = self._sensitivity
         return result
 

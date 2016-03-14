@@ -19,8 +19,7 @@ class ConvolutionLayer(Layer.Layer):
         self._init_bias()
         self._connected_table = np.ones([kernel_num, self._pre_data.get_channel()])
 
-        #暂时不支持非线性激活函数，反向传播时未能搞懂
-        #self._activation = ActivationFactory.get_activation(activation_type)
+        self._activation = ActivationFactory.get_activation(activation_type)
 
 
     def _init_kernel(self):
@@ -56,7 +55,8 @@ class ConvolutionLayer(Layer.Layer):
                 if self._connected_table[kernel, channel]:
                     post_data_tensor[kernel] += sg.convolve2d(pre_data_tensor[channel], self._kernel[kernel, channel].T, 'valid')
             post_data_tensor[kernel] += self._bias[kernel]
-            #post_data_tensor[kernel] = self._activation.apply_activate_elementwise(post_data_tensor[kernel])
+            post_data_tensor[kernel] = self._activation.apply_activate_elementwise(post_data_tensor[kernel])
+        self._post_data.set_data(post_data_tensor)
 
     def backward(self):
         #update kernel and bias
@@ -65,19 +65,22 @@ class ConvolutionLayer(Layer.Layer):
         post_sensitivity = self._post_data.get_sensitivity()
         for kernel in xrange(self._kernel_num):
             for channel in xrange(pre_data_chanel):
-                delta_kernel = sg.convolve2d(pre_data_tensor[channel], post_sensitivity[kernel], 'valid')
-                self._kernel[kernel][channel] -= self._learning_rate * delta_kernel
-            self._bias[kernel] -= self._learning_rate * post_sensitivity[kernel]
+                if self._connected_table[kernel, channel]:
+                    delta_kernel = sg.convolve2d(pre_data_tensor[channel], post_sensitivity[kernel], 'valid')
+                    self._kernel[kernel][channel] -= self._learning_rate * delta_kernel
+            self._bias[kernel] -= self._learning_rate * np.sum(post_sensitivity[kernel])
 
         #update pre sensitivity
         pre_sensitivity = self._pre_data.get_sensitivity()
         pre_sensitivity.fill(0)
-        post_tensor = self._post_data.get_data()
         for channel in xrange(pre_data_chanel):
             for kernel in xrange(self._kernel_num):
                 if self._connected_table[kernel, channel]:
                     pre_sensitivity[channel] += sg.convolve2d(post_sensitivity[kernel], self._kernel[kernel][channel],
-                            'full')# * self._activation.apply_derivate_elementwise_from_output(post_tensor[kernel])
+                            'full')
+            derivate_u = self._activation.apply_derivate_elementwise_from_output(pre_data_tensor[channel])
+            pre_sensitivity[channel] = np.multiply(pre_sensitivity[channel], derivate_u)
+        self._pre_data.set_sensitivity(pre_sensitivity)
 
 
     def _expand(self):

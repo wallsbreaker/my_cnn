@@ -14,20 +14,20 @@ class FullConnectedLayer(Layer.Layer):
         self._post_dimen = post_dimen
         self._activation = ActivationFactory.get_activation(activation_type)
         self._init_w()
-        self._init_bias()
+        #self._init_bias()
 
     def _init_w(self):
         low, high = -0.5, 0.5
         self._w = np.random.uniform(low, high, [self._post_dimen, self._pre_data.get_channel()])
 
-    def _init_bias(self):
-        low, high = -0.5, 0.5
-        self._bias = np.random.uniform(low, high)
+    #def _init_bias(self):
+        #low, high = -0.5, 0.5
+        #self._bias = np.random.uniform(low, high)
 
     def forward(self):
         pre_data_array = np.array([Data.Data.output_matrix2vector(self._pre_data.get_data())])
         result = np.dot(self._w, pre_data_array.T)
-        result += self._bias
+        #result += self._bias
         result = self._activation.apply_activate_elementwise(result)
 
         post_data_tensor = self._post_data.get_data()
@@ -41,11 +41,10 @@ class FullConnectedLayer(Layer.Layer):
     def backward(self):
         post_sensitivity = np.array([Data.Data.output_matrix2vector(self._post_data.get_sensitivity())])
         input_data = np.array([Data.Data.output_matrix2vector(self._pre_data.get_data())])
-        output_data = np.array([Data.Data.output_matrix2vector(self._post_data.get_data())])
         #updatge sensitivities
         w_delta = np.dot(self._w.T, post_sensitivity.T)
-        derivate_u = self._activation.apply_derivate_elementwise_from_output(output_data)
-        pre_sensitivity = np.multiply(w_delta, derivate_u)
+        derivate_u = self._activation.apply_derivate_elementwise_from_output(input_data)
+        pre_sensitivity = np.multiply(w_delta, derivate_u.T)
         self._pre_data.set_sensitivity(np.array([[x] for x in pre_sensitivity]))
 
         #更新_w
@@ -53,4 +52,4 @@ class FullConnectedLayer(Layer.Layer):
         self._w -= self._learning_rate * delta_w
 
         #更新 _bias
-        self._bias -= self._learning_rate * pre_sensitivity
+        #self._bias -= self._learning_rate * np.sum(pre_sensitivity)

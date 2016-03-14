@@ -37,7 +37,7 @@ class CNN(object):
         for ix in xrange(sample_size):
             if np.argmax(pred_label[ix]) == np.argmax(np.array(label[ix])):
                 predict_correct += 1
-        print "Accuracy before iteration: {0}".format(predict_correct/sample_size)
+        print "Accuracy before : {0}".format(predict_correct/sample_size)
 
         seq = np.r_[0:sample_size]
         for iter in xrange(self._max_iter):
@@ -49,8 +49,8 @@ class CNN(object):
                 for layer in self._layers:
                     layer.forward()
 
-                print 'forward over'
-                #误差用交叉上的形式
+                '''
+                #误差用交叉熵的形式
                 output_data = Data.Data.output_matrix2vector(self._data[-1].get_data())
                 output_error = np.zeros([output_node_num, 1, 1])
                 for output_ix in xrange(output_node_num):
@@ -58,18 +58,24 @@ class CNN(object):
                         output_error[output_ix, 0, 0] = np.log(output_data[output_ix])
                     else:
                         output_error[output_ix, 0, 0] = np.log(1 - output_data[output_ix])
+                '''
+                #误差暂用平方误差
+                output_data = Data.Data.output_matrix2vector(self._data[-1].get_data())
+                output_error = np.zeros([output_node_num, 1, 1])
+                for output_ix in xrange(output_node_num):
+                    output_error[output_ix, 0, 0] = (output_data[output_ix] - label[ix][output_ix])**2/2
                 self._data[-1].set_sensitivity(output_error)
 
                 for layer in reversed(self._layers):
                     layer.backward()
 
-            if __debug__:
-                predict_correct = 0.0
-                pred_label = self.predict(data)
-                for ix in xrange(sample_size):
-                    if pred_label[ix] == label[ix]:
-                        predict_correct += 1
-                print "Iteration {0} accuracy: {1}".format(iter, predict_correct/sample_size)
+            predict_correct = 0.0
+            pred_label = self.predict(data)
+            output_node_num = len(pred_label[0])
+            for ix in xrange(sample_size):
+                if np.argmax(pred_label[ix]) == np.argmax(np.array(label[ix])):
+                    predict_correct += 1
+            print "Accuracy iteration: {0}".format(predict_correct/sample_size)
 
     def _compute_error(self):
         pass
